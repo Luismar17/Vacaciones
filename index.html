@@ -12,9 +12,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             color: #333;
+            padding: 20px;
         }
         .container {
             background-color: white;
@@ -22,25 +23,28 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 400px;
+            max-width: 500px;
         }
         h1 {
             text-align: center;
             color: #4a5568;
+            margin-bottom: 1.5rem;
         }
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         label {
             display: block;
             margin-bottom: 0.5rem;
             color: #4a5568;
+            font-weight: bold;
         }
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.75rem;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
+            font-size: 1rem;
         }
         button {
             width: 100%;
@@ -51,16 +55,18 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            font-size: 1rem;
+            font-weight: bold;
         }
         button:hover {
             background-color: #434190;
         }
-        #resultado {
-            margin-top: 1rem;
+        #resultado, #resumenVacaciones {
+            margin-top: 1.5rem;
             padding: 1rem;
             background-color: #e2e8f0;
             border-radius: 4px;
-            text-align: center;
+            text-align: left;
         }
         .author {
             position: fixed;
@@ -76,11 +82,14 @@
         .flatpickr-day.festivo:hover {
             background: #ffaeaa !important;
         }
+        .resumen-item {
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Calculadora de Vacaciones</h1>
+        <h1>Calculadora de Vacaciones Colombia</h1>
         <div class="form-group">
             <label for="fechaInicio">Fecha de inicio:</label>
             <input type="text" id="fechaInicio" placeholder="Seleccione fecha">
@@ -89,14 +98,21 @@
             <label for="periodos">Períodos acumulados:</label>
             <input type="number" id="periodos" min="1" value="1">
         </div>
-        <button onclick="calcularFechaFin()">Calcular fecha de regreso</button>
+        <div class="form-group">
+            <label for="tipoEmpleado">Tipo de empleado:</label>
+            <select id="tipoEmpleado">
+                <option value="publico">Sector Público</option>
+                <option value="privado">Sector Privado</option>
+            </select>
+        </div>
+        <button onclick="calcularVacaciones()">Calcular Vacaciones</button>
         <div id="resultado"></div>
+        <div id="resumenVacaciones"></div>
     </div>
     <div class="author">Creado por Luis Eduardo Martínez García</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
     <script>
-        // Festivos en Colombia para 2024 y 2025 (ajustar según el año)
         const festivos = [
             '2024-01-01', '2024-01-08', '2024-03-25', '2024-03-28', '2024-03-29',
             '2024-05-01', '2024-05-13', '2024-06-03', '2024-06-10', '2024-07-01',
@@ -123,9 +139,10 @@
             }
         });
 
-        function calcularFechaFin() {
+        function calcularVacaciones() {
             const fechaInicio = document.getElementById('fechaInicio').value;
             const periodos = parseInt(document.getElementById('periodos').value);
+            const tipoEmpleado = document.getElementById('tipoEmpleado').value;
             
             if (!fechaInicio) {
                 alert('Por favor, seleccione una fecha de inicio.');
@@ -134,7 +151,11 @@
 
             let fecha = new Date(fechaInicio);
             let diasHabiles = 0;
-            let diasTotales = 15 * periodos;
+            let diasTotales = tipoEmpleado === 'publico' ? 15 : 14; // 14 días para sector privado
+            diasTotales *= periodos;
+
+            let diasFestivos = 0;
+            let diasFinDeSemana = 0;
 
             while (diasHabiles < diasTotales) {
                 fecha.setDate(fecha.getDate() + 1);
@@ -142,7 +163,11 @@
                 const esFestivo = festivos.includes(fechaStr);
                 const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
 
-                if (!esFestivo && !esFinDeSemana) {
+                if (esFestivo) {
+                    diasFestivos++;
+                } else if (esFinDeSemana) {
+                    diasFinDeSemana++;
+                } else {
                     diasHabiles++;
                 }
             }
@@ -156,7 +181,21 @@
             } while (esFestivo || esFinDeSemana);
 
             const fechaFin = fecha.toISOString().split('T')[0];
-            document.getElementById('resultado').innerHTML = `Fecha de regreso: ${fechaFin}`;
+            const diasTotalesTranscurridos = diasHabiles + diasFestivos + diasFinDeSemana;
+
+            document.getElementById('resultado').innerHTML = `
+                <strong>Fecha de regreso:</strong> ${fechaFin}
+            `;
+
+            document.getElementById('resumenVacaciones').innerHTML = `
+                <h3>Resumen de Vacaciones:</h3>
+                <div class="resumen-item"><strong>Fecha de inicio:</strong> ${fechaInicio}</div>
+                <div class="resumen-item"><strong>Fecha de regreso:</strong> ${fechaFin}</div>
+                <div class="resumen-item"><strong>Días hábiles de vacaciones:</strong> ${diasHabiles}</div>
+                <div class="resumen-item"><strong>Días festivos durante el periodo:</strong> ${diasFestivos}</div>
+                <div class="resumen-item"><strong>Fines de semana durante el periodo:</strong> ${diasFinDeSemana}</div>
+                <div class="resumen-item"><strong>Total de días transcurridos:</strong> ${diasTotalesTranscurridos}</div>
+            `;
         }
     </script>
 </body>
