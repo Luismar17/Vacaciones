@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Vacaciones Colombia</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4c51bf;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #434190;
+        }
+        #resultado {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .author {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .flatpickr-day.festivo {
+            background: #ffcccb;
+            border-color: #ffcccb;
+        }
+        .flatpickr-day.festivo:hover {
+            background: #ffaeaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Vacaciones</h1>
+        <div class="form-group">
+            <label for="fechaInicio">Fecha de inicio:</label>
+            <input type="text" id="fechaInicio" placeholder="Seleccione fecha">
+        </div>
+        <div class="form-group">
+            <label for="periodos">Períodos acumulados:</label>
+            <input type="number" id="periodos" min="1" value="1">
+        </div>
+        <button onclick="calcularFechaFin()">Calcular fecha de regreso</button>
+        <div id="resultado"></div>
+    </div>
+    <div class="author">Creado por Luis Eduardo Martínez García</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script>
+        // Festivos en Colombia para 2024 (ajustar según el año)
+        const festivos2024 = [
+            '2024-01-01', '2024-01-08', '2024-03-25', '2024-03-28', '2024-03-29',
+            '2024-05-01', '2024-05-13', '2024-06-03', '2024-06-10', '2024-07-01',
+            '2024-07-20', '2024-08-07', '2024-08-19', '2024-10-14', '2024-11-04',
+            '2024-11-11', '2024-12-08', '2024-12-25'
+        ];
+
+        flatpickr("#fechaInicio", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            disable: [
+                function(date) {
+                    return (date.getDay() === 0 || date.getDay() === 6);
+                }
+            ],
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                if(festivos2024.includes(dStr)) {
+                    dayElem.className += " festivo";
+                }
+            }
+        });
+
+        function calcularFechaFin() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const periodos = parseInt(document.getElementById('periodos').value);
+            
+            if (!fechaInicio) {
+                alert('Por favor, seleccione una fecha de inicio.');
+                return;
+            }
+
+            let fecha = new Date(fechaInicio);
+            let diasHabiles = 0;
+            let diasTotales = 15 * periodos;
+
+            while (diasHabiles < diasTotales) {
+                fecha.setDate(fecha.getDate() + 1);
+                const esFestivo = festivos2024.includes(fecha.toISOString().split('T')[0]);
+                const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
+
+                if (!esFestivo && !esFinDeSemana) {
+                    diasHabiles++;
+                }
+            }
+
+            const fechaFin = fecha.toISOString().split('T')[0];
+            document.getElementById('resultado').innerHTML = `Fecha de regreso: ${fechaFin}`;
+        }
+    </script>
+</body>
+</html>
