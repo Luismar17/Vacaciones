@@ -11,7 +11,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
             color: #333;
@@ -23,9 +23,10 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 500px;
+            max-width: 800px;
+            margin-bottom: 20px;
         }
-        h1 {
+        h1, h2 {
             text-align: center;
             color: #4a5568;
             margin-bottom: 1.5rem;
@@ -85,6 +86,13 @@
         .resumen-item {
             margin-bottom: 0.5rem;
         }
+        #informacionVacaciones {
+            margin-top: 2rem;
+        }
+        #informacionVacaciones ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +116,18 @@
         <button onclick="calcularVacaciones()">Calcular Vacaciones</button>
         <div id="resultado"></div>
         <div id="resumenVacaciones"></div>
+        <!-- Nueva sección para las leyes -->
+        <div id="informacionVacaciones">
+            <h2>Información sobre Vacaciones en Colombia</h2>
+            <p>El período de vacaciones es un derecho laboral que consiste en el descanso remunerado al que tiene derecho todo trabajador después de haber laborado un año continuo.</p>
+            <p>Las vacaciones en Colombia están reguladas por las siguientes leyes:</p>
+            <ul>
+                <li><strong>Código Sustantivo del Trabajo (Ley 141 de 1961):</strong> Establece que los trabajadores tienen derecho a 15 días hábiles de vacaciones por cada año de servicio (Artículo 186).</li>
+                <li><strong>Decreto 1045 de 1978:</strong> Regula las vacaciones de los empleados públicos, estableciendo también el derecho a 15 días hábiles de vacaciones anuales.</li>
+                <li><strong>Ley 50 de 1990:</strong> Permite que el empleador y el empleado en el sector privado lleguen a acuerdos sobre la acumulación y disfrute de las vacaciones.</li>
+            </ul>
+            <p>Las vacaciones son fundamentales para el bienestar del trabajador, permitiendo la recuperación física y mental.</p>
+        </div>
     </div>
     <div class="author">Creado por Luis Eduardo Martínez García</div>
 
@@ -151,7 +171,7 @@
 
             let fecha = new Date(fechaInicio);
             let diasHabiles = 0;
-            let diasTotales = tipoEmpleado === 'publico' ? 15 : 14; // 14 días para sector privado
+            let diasTotales = 15; // 15 días hábiles para ambos sectores
             diasTotales *= periodos;
 
             let diasFestivos = 0;
@@ -161,7 +181,12 @@
                 fecha.setDate(fecha.getDate() + 1);
                 const fechaStr = fecha.toISOString().split('T')[0];
                 const esFestivo = festivos.includes(fechaStr);
-                const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
+                const esSabado = fecha.getDay() === 6;
+                const esDomingo = fecha.getDay() === 0;
+
+                // En el sector público, sábados y domingos no son días laborales
+                // En el sector privado, sábados sí pueden ser laborales
+                let esFinDeSemana = tipoEmpleado === 'publico' ? (esSabado || esDomingo) : esDomingo;
 
                 if (esFestivo) {
                     diasFestivos++;
@@ -177,11 +202,13 @@
                 fecha.setDate(fecha.getDate() + 1);
                 const fechaStr = fecha.toISOString().split('T')[0];
                 const esFestivo = festivos.includes(fechaStr);
-                const esFinDeSemana = fecha.getDay() === 0 || fecha.getDay() === 6;
-            } while (esFestivo || esFinDeSemana);
+                const esSabado = fecha.getDay() === 6;
+                const esDomingo = fecha.getDay() === 0;
+                var esFinDeSemana = tipoEmpleado === 'publico' ? (esSabado || esDomingo) : esDomingo;
+            } while (festivos.includes(fecha.toISOString().split('T')[0]) || esFinDeSemana);
 
             const fechaFin = fecha.toISOString().split('T')[0];
-            const diasTotalesTranscurridos = diasHabiles + diasFestivos + diasFinDeSemana;
+            const diasTotalesTranscurridos = (fecha - new Date(fechaInicio)) / (1000 * 60 * 60 * 24);
 
             document.getElementById('resultado').innerHTML = `
                 <strong>Fecha de regreso:</strong> ${fechaFin}
@@ -200,3 +227,4 @@
     </script>
 </body>
 </html>
+
