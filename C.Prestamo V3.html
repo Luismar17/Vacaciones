@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Préstamos Avanzada Plus</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #f4f4f4;
+            --text-color: #333;
+            --card-background: #fff;
+        }
+
+        .dark-mode {
+            --primary-color: #2980b9;
+            --secondary-color: #34495e;
+            --background-color: #2c3e50;
+            --text-color: #ecf0f1;
+            --card-background: #34495e;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--background-color);
+            transition: all 0.3s ease;
+        }
+
+        h1, h2 {
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: var(--card-background);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        tr:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        #darkModeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--secondary-color);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .summary-item {
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item h3 {
+            margin-bottom: 10px;
+        }
+
+        #chartContainer {
+            width: 100%;
+            height: 400px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted black;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .summary {
+                flex-direction: column;
+            }
+            .summary-item {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle">🌓</button>
+
+    <h1>Calculadora de Préstamos Avanzada Plus</h1>
+
+    <div class="card">
+        <form id="loanForm">
+            <label for="tasa" class="tooltip">Tasa efectiva anual (%):
+                <span class="tooltiptext">La tasa de interés anual del préstamo.</span>
+            </label>
+            <input type="number" id="tasa" required step="0.01">
+
+            <label for="prestamo" class="tooltip">Valor del préstamo:
+                <span class="tooltiptext">El monto total que desea pedir prestado.</span>
+            </label>
+            <input type="number" id="prestamo" required>
+
+            <label for="cuotas" class="tooltip">Número de cuotas:
+                <span class="tooltiptext">El número de pagos mensuales para devolver el préstamo.</span>
+            </label>
+            <input type="number" id="cuotas" required>
+
+            <label for="seguro" class="tooltip">Valor del seguro por cuota (opcional):
+                <span class="tooltiptext">Costo adicional por seguro en cada cuota.</span>
+            </label>
+            <input type="number" id="seguro" value="0" step="0.01">
+
+            <label for="tipoPago" class="tooltip">Tipo de pago:
+                <span class="tooltiptext">Elija entre cuotas fijas o cuotas decrecientes.</span>
+            </label>
+            <select id="tipoPago">
+                <option value="fijo">Cuotas fijas</option>
+                <option value="decreciente">Cuotas decrecientes</option>
+            </select>
+
+            <button type="submit">Calcular</button>
+        </form>
+    </div>
+
+    <div id="resultado"></div>
+
+    <div class="card">
+        <h2>Gráfico de Amortización</h2>
+        <canvas id="amortizationChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Capacidad de Pago</h2>
+        <form id="capacidadPagoForm">
+            <label for="ingresoMensual">Ingreso mensual:</label>
+            <input type="number" id="ingresoMensual" required>
+
+            <label for="gastosMensuales">Gastos mensuales:</label>
+            <input type="number" id="gastosMensuales" required>
+
+            <button type="submit">Calcular Capacidad de Pago</button>
+        </form>
+        <div id="capacidadPagoResultado"></div>
+    </div>
+
+    <script>
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+        });
+
+        document.getElementById('loanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const tasa = parseFloat(document.getElementById('tasa').value) / 100 / 12;
+            const prestamo = parseFloat(document.getElementById('prestamo').value);
+            const cuotas = parseInt(document.getElementById('cuotas').value);
+            const seguro = parseFloat(document.getElementById('seguro').value);
+            const tipoPago = document.getElementById('tipoPago').value;
+
+            let html = '<div class="card"><h2>Resultados del Préstamo</h2>';
+            html += '<table id="resultadosTabla"><tr><th>Cuota</th><th>Saldo Inicial</th><th>Interés</th><th>Abono Capital</th><th>Cuota Total</th><th>Saldo Final</th></tr>';
+
+            let saldo = prestamo;
+            let totalIntereses = 0;
+            let totalPagado = 0;
+            let cuotaFija;
+
+            if (tipoPago === 'fijo') {
+                cuotaFija = prestamo * (tasa * Math.pow(1 + tasa, cuotas)) / (Math.pow(1 + tasa, cuotas) - 1);
+            } else {
+                cuotaFija = prestamo / cuotas;
+            }
+
+            let saldos = [];
+            let intereses = [];
+            let capitales = [];
+
+            for (let i = 1; i <= cuotas; i++) {
+                const interes = saldo * tasa;
+                let abonoCapital;
+                if (tipoPago === 'fijo') {
+                    abonoCapital = cuotaFija - interes;
+                } else {
+                    abonoCapital = cuotaFija;
+                }
+                const cuotaTotal = (tipoPago === 'fijo' ? cuotaFija : cuotaFija + interes) + seguro;
+                const saldoFinal = saldo - abonoCapital;
+
+                html += `<tr>
+                    <td>${i}</td>
+                    <td>$${saldo.toFixed(2)}</td>
+                    <td>$${interes.toFixed(2)}</td>
+                    <td>$${abonoCapital.toFixed(2)}</td>
+                    <td>$${cuotaTotal.toFixed(2)}</td>
+                    <td>$${saldoFinal.toFixed(2)}</td>
+                </tr>`;
+
+                saldo = saldoFinal;
+                totalIntereses += interes;
+                totalPagado += cuotaTotal;
+
+                saldos.push(saldo);
+                intereses.push(interes);
+                capitales.push(abonoCapital);
+            }
+
+            html += '</table>';
+
+            html += `<div class="summary">
+                <div class="summary-item">
+                    <h3>Total Pagado</h3>
+                    <p>$${totalPagado.toFixed(2)}</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Total Intereses</h3>
+                    <p>$${totalIntereses.toFixed(2)}</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Relación Interés/Capital</h3>
+                    <p>${((totalIntereses / prestamo) * 100).toFixed(2)}%</p>
+                </div>
+            </div>`;
+
+            html += '<button onclick="exportarPDF()">Exportar a PDF</button>';
+            html += '</div>';
+
+            document.getElementById('resultado').innerHTML = html;
+
+            // Crear gráfico de amortización
+            const ctx = document.getElementById('amortizationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: cuotas}, (_, i) => i + 1),
+                    datasets: [{
+                        label: 'Saldo',
+                        data: saldos,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }, {
+                        label: 'Interés',
+                        data: intereses,
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1
+                    }, {
+                        label: 'Capital',
+                        data: capitales,
+                        borderColor: 'rgb(54, 162, 235)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Gráfico de Amortización'
+                        }
+                    }
+                }
+            });
+        });
+
+        document.getElementById('capacidadPagoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const ingresoMensual = parseFloat(document.getElementById('ingresoMensual').value);
+            const gastosMensuales = parseFloat(document.getElementById('gastosMensuales').value);
+
+            const capacidadPago = ingresoMensual - gastosMensuales;
+            const capacidadPagoSegura = capacidadPago * 0.35; // 35% del ingreso disponible
+
+            let html = `<h3>Resultados de Capacidad de Pago</h3>
+                        <p>Ingreso disponible: $${capacidadPago.toFixed(2)}</p>
+                        <p>Capacidad de pago segura (35%): $${capacidadPagoSegura.toFixed(2)}</p>
+                        <p>Se recomienda que su cuota mensual no supere los $${capacidadPagoSegura.toFixed(2)}.</p>`;
+
+            document.getElementById('capacidadPagoResultado').innerHTML = html;
+        });
+
+        function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.text("Resultados del Préstamo", 14, 15);
+
+            // Añadir la tabla al PDF
+            doc.autoTable({ html: '#resultadosTabla' });
+
+            // Añadir el resumen al PDF
+            const summaryItems = document.querySelectorAll('.summary-item');
+            let yPos = doc.lastAutoTable.finalY + 10;
+
+            summaryItems.forEach((item, index) => {
+                const title = item.querySelector('h3').textContent;
+                const value = item.querySelector('p').textContent;
+                doc.text(`${title}: ${value}`, 14, yPos + (index * 10));
+            });
+
+            // Guardar el PDF
+            doc.save("resultados_prestamo.pdf");
+        }
+    </script>
+</body>
+</html>

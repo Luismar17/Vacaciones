@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Préstamos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #resultado {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de Préstamos</h1>
+    <form id="loanForm">
+        <label for="tasa">Tasa efectiva anual (%):</label>
+        <input type="number" id="tasa" required step="0.01">
+
+        <label for="prestamo">Valor del préstamo:</label>
+        <input type="number" id="prestamo" required>
+
+        <label for="cuotas">Número de cuotas:</label>
+        <input type="number" id="cuotas" required>
+
+        <label for="seguro">Valor del seguro por cuota (opcional):</label>
+        <input type="number" id="seguro" value="0" step="0.01">
+
+        <button type="submit">Calcular</button>
+    </form>
+
+    <div id="resultado"></div>
+
+    <script>
+        document.getElementById('loanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const tasa = parseFloat(document.getElementById('tasa').value) / 100 / 12;
+            const prestamo = parseFloat(document.getElementById('prestamo').value);
+            const cuotas = parseInt(document.getElementById('cuotas').value);
+            const seguro = parseFloat(document.getElementById('seguro').value);
+
+            let html = '<h2>Resultados del Préstamo</h2>';
+            html += '<table><tr><th>Cuota</th><th>Saldo Inicial</th><th>Interés</th><th>Abono Capital</th><th>Cuota Total</th><th>Saldo Final</th></tr>';
+
+            let saldo = prestamo;
+            let totalIntereses = 0;
+            const cuotaFija = prestamo * (tasa * Math.pow(1 + tasa, cuotas)) / (Math.pow(1 + tasa, cuotas) - 1);
+
+            for (let i = 1; i <= cuotas; i++) {
+                const interes = saldo * tasa;
+                const abonoCapital = cuotaFija - interes;
+                const cuotaTotal = cuotaFija + seguro;
+                const saldoFinal = saldo - abonoCapital;
+
+                html += `<tr>
+                    <td>${i}</td>
+                    <td>$${saldo.toFixed(2)}</td>
+                    <td>$${interes.toFixed(2)}</td>
+                    <td>$${abonoCapital.toFixed(2)}</td>
+                    <td>$${cuotaTotal.toFixed(2)}</td>
+                    <td>$${saldoFinal.toFixed(2)}</td>
+                </tr>`;
+
+                saldo = saldoFinal;
+                totalIntereses += interes;
+            }
+
+            html += '</table>';
+            html += `<p><strong>Total de intereses pagados:</strong> $${totalIntereses.toFixed(2)}</p>`;
+
+            document.getElementById('resultado').innerHTML = html;
+        });
+    </script>
+</body>
+</html>
